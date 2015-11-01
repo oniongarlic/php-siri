@@ -54,6 +54,7 @@ $url.='?'.http_build_query($q);
 
 $curl=$this->getcurl($url);
 curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
+curl_setopt($curl, CURLOPT_ENCODING, '');
 
 $response=curl_exec($curl);
 $status=curl_getinfo($curl, CURLINFO_HTTP_CODE);
@@ -71,7 +72,7 @@ return $response;
 public function loadVehicles()
 {
 $r=$this->executeGET('vm');
-$data=json_decode($r, false);
+$data=json_decode($r, true);
 print_r($data);
 if ($data['status']=='PENDING')
 	return false;
