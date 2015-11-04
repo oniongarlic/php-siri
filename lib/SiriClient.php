@@ -7,7 +7,14 @@ protected $url;
 protected $stops;
 protected $vehicles;
 
-function __construct($url)
+const VM_OK=true;
+const VM_PENDING=1;
+const VM_ERROR=2;
+
+const SM_OK=true;
+const SM_ERROR=false;
+
+public function __construct($url)
 {
 $this->url=$url;
 }
@@ -75,19 +82,19 @@ $r=$this->executeGET('vm');
 $data=json_decode($r, true);
 print_r($data);
 if ($data['status']=='PENDING')
-	return false;
+	return self::VM_PENDING;
 
 file_put_contents('vm.json', json_encode($data, JSON_PRETTY_PRINT));
 
-return true;
+return self::VM_OK;
 }
 
 /**
  * SM
  **/
-public function loadStops()
+public function loadStops($cache=true)
 {
-if (file_exists('sm.json'))
+if (file_exists('sm.json') && $cache===true)
 	$r=file_get_contents('sm.json');
 else
 	$r=$this->executeGET('sm');
@@ -98,7 +105,7 @@ ksort($this->stops);
 if (!file_exists('sm.json'))
 	file_put_contents('sm.json', json_encode($this->stops, JSON_PRETTY_PRINT));
 
-return true;
+return SM_OK;
 }
 
 public function loadStop($id)
@@ -110,7 +117,7 @@ file_put_contents('sm-'.$id.'.json', json_encode($data, JSON_PRETTY_PRINT));
 
 print_r($data);
 
-return true;
+return self::SM_OK;
 }
 
 } // php
