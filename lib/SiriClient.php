@@ -1,11 +1,13 @@
 <?php
 
 class SiriClientException extends Exception { }
+class StopsNotLoadedException extends Exception { }
+class StopNotAvailableException extends Exception { }
 
 class SiriClient
 {
 protected $url;
-
+protected $cachedir='./';
 protected $stops;
 protected $vehicles;
 
@@ -78,15 +80,15 @@ return $response;
 /**
  * VM - Vehicle Monitoring
  **/
-public function loadVehicles()
+public function loadVehicles($cache=true)
 {
 $r=$this->executeGET('vm');
 $data=json_decode($r, true);
-print_r($data);
 if ($data['status']=='PENDING')
 	return self::VM_PENDING;
 
-file_put_contents('vm.json', json_encode($data, JSON_PRETTY_PRINT));
+if ($cache)
+	file_put_contents($this->cachedir.'vm.json', json_encode($data, JSON_PRETTY_PRINT));
 
 return self::VM_OK;
 }
@@ -96,28 +98,45 @@ return self::VM_OK;
  **/
 public function loadStops($cache=true)
 {
-if (file_exists('sm.json') && $cache===true)
-	$r=file_get_contents('sm.json');
+if (file_exists($this->cachedir.'sm.json') && $cache===true)
+	$r=file_get_contents($this->cachedir.'sm.json');
 else
 	$r=$this->executeGET('sm');
 
 $this->stops=json_decode($r, true);
 ksort($this->stops);
 
-if (!file_exists('sm.json'))
-	file_put_contents('sm.json', json_encode($this->stops, JSON_PRETTY_PRINT));
+if (!file_exists('sm.json') && $cache)
+	file_put_contents($this->cachedir.'sm.json', json_encode($this->stops, JSON_PRETTY_PRINT));
 
-return SM_OK;
+return self::SM_OK;
 }
 
-public function loadStop($id)
+public function hasStops()
 {
+return count($this->stops)>0;
+}
+
+public function getStops()
+{
+if ($this->hasStops()==false)
+	throw new SiriClientException('Stops are not loaded');
+
+return $this->stops;
+}
+
+public function loadStop($id, $cache=true)
+{
+if ($this->hasStops()==false)
+	throw new SiriClientException('Stops are not loaded');
+if (!array_key_exists($id, $this->stops))
+	throw new SiriClientException('Invalid stop ID');
+
 $r=$this->executeGET('sm/'.$id);
 $data=json_decode($r, false);
 
-file_put_contents('sm-'.$id.'.json', json_encode($data, JSON_PRETTY_PRINT));
-
-print_r($data);
+if ($cache)
+	file_put_contents($this->cachedir.'sm-'.$id.'.json', json_encode($data, JSON_PRETTY_PRINT));
 
 return self::SM_OK;
 }
