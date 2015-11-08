@@ -1,5 +1,7 @@
 <?php
 
+class SiriClientException extends Exception { }
+
 class SiriClient
 {
 protected $url;
@@ -40,7 +42,7 @@ switch ($status) {
 	case 403:
 	case 404:
 	case 500:
-		throw new Exception($error, $status);
+		throw new SiriClientException($error, $status);
 	case 200:
 		return true;
 	default:
@@ -74,7 +76,7 @@ return $response;
 }
 
 /**
- * VM
+ * VM - Vehicle Monitoring
  **/
 public function loadVehicles()
 {
@@ -90,7 +92,7 @@ return self::VM_OK;
 }
 
 /**
- * SM
+ * SM - Stop Monitoring
  **/
 public function loadStops($cache=true)
 {
