@@ -10,6 +10,7 @@ protected $url;
 protected $cachedir='./';
 protected $stops;
 protected $vehicles;
+protected $stop;
 
 const VM_OK=true;
 const VM_PENDING=1;
@@ -21,6 +22,7 @@ const SM_ERROR=false;
 public function __construct($url)
 {
 $this->url=$url;
+$this->stop=array();
 }
 
 private function getcurl($url)
@@ -138,7 +140,14 @@ $data=json_decode($r, false);
 if ($cache)
 	file_put_contents($this->cachedir.'sm-'.$id.'.json', json_encode($data, JSON_PRETTY_PRINT));
 
+$this->stop[$id]=$data;
+
 return self::SM_OK;
+}
+
+public function getStop($id)
+{
+return array_key_exists($id, $this->stop) ? $this->stop[$id] : false;
 }
 
 } // php
