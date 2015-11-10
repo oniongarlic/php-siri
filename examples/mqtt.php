@@ -23,6 +23,7 @@ private $location;
 private $mstops;
 private $srvtime;
 private $lastUpdate;
+private $drift=0;
 
 function __construct(array $config)
 {
@@ -125,28 +126,63 @@ foreach ($datas as $data) {
 return $r;
 }
 
+private function publishStopResults($sid, stdClass $s)
+{
+$r=$this->createStopData($s->result);
+$this->publishStop($sid, $r);
+
+// cache for debug purposes
+file_put_contents($sid.'-mqtt.json', json_encode($r, JSON_PRETTY_PRINT));
+}
+
 private function refreshStopData($sid)
 {
-// Initial load
 $now=time();
 $s=$this->c->getStop($sid);
-if ($s==false || $now-$this->lastUpdate[$sid]>30) {
-	echo "L: $sid\n";
+
+// Initial load
+if ($s===false) {
+	echo "I: $sid\n";
+	$this->c->loadStop($sid);
+	$s=$this->c->getStop($sid);
+	// Data failed to load or is not valid, skip stop on error XXX count/report errors in some way
+	if ($s===false || $s->status!='OK') {
+		echo "E: $sid\n";
+		$this->lastUpdate[$sid]=0;
+		return false;
+	}
+	$this->drift=$now - $s->servertime;
+	echo "D: $now ".$this->drift." - ".$s->servertime."\n";
+	$this->lastUpdate[$sid]=$now;
+	$this->publishStopResults($sid, $s);
+	return;
+}
+
+$dif=60*2; // 2min
+$iv=30;
+// Check time to first on list
+if (count($s->result)>0) {
+	$data=$s->result[0];
+	// $dif=$data->expectedarrivaltime-$data->recordedattime;
+	$dif=$data->expectedarrivaltime-($now+$this->drift);
+	if ($dif<30)
+		$iv=10;
+}
+
+// Refresh if over 30sec from previous update, or if next bus arrival is in 5minutes
+if ($now-$this->lastUpdate[$sid]>$iv && $dif<60) {
+	echo "L: $sid ($dif $iv)\n";
 	$this->c->loadStop($sid);
 	$s=$this->c->getStop($sid);
 	$this->lastUpdate[$sid]=$now;
 } else {
-	echo "S: $sid\n";
-}
-
-if ($s->status!='OK') {
-	echo "E: $sid\n";
+	// Old data is fine, skip 
+	echo "S: $sid ($dif)\n";
 	return;
 }
-// Check timestamps, do we need to refresh
-$r=$this->createStopData($s->result);
-$this->publishStop($sid, $r);
-file_put_contents($sid.'-mqtt.json', json_encode($r, JSON_PRETTY_PRINT));
+
+$this->publishStopResults($sid, $s);
+return true;
 }
 
 private function refreshStopsData()
