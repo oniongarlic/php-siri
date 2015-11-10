@@ -107,7 +107,10 @@ foreach ($datas as $data) {
 		break;
 	//$d=new DateTime($data->expectedarrivaltime);
 
+	// We send the time in seconds to arrival
 	$dif=$data->expectedarrivaltime-$data->recordedattime;
+
+	// Display can't handle any "exotic" characters to transliterate to plain ASCII
 	$tname=iconv("UTF-8", "ASCII//TRANSLIT", $data->destinationdisplay);
 
 	$tmp=new StopData();
@@ -127,11 +130,13 @@ private function refreshStopData($sid)
 // Initial load
 $now=time();
 $s=$this->c->getStop($sid);
-if ($s==false || time()-$this->lastUpdate[$sid]>10) {
+if ($s==false || $now-$this->lastUpdate[$sid]>30) {
 	echo "L: $sid\n";
 	$this->c->loadStop($sid);
 	$s=$this->c->getStop($sid);
 	$this->lastUpdate[$sid]=$now;
+} else {
+	echo "S: $sid\n";
 }
 
 if ($s->status!='OK') {
