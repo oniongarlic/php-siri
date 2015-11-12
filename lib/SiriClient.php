@@ -11,6 +11,7 @@ protected $cachedir='./';
 protected $stops;
 protected $vehicles;
 protected $stop;
+protected $ua="PHP-SIRI Library/0.0.1; (+http://www.tal.org/projects/php-siri-library; onion@tal.org)";
 
 const VM_OK=true;
 const VM_PENDING=1;
@@ -33,6 +34,7 @@ $options=array(
 	CURLOPT_HEADER => FALSE,
 	CURLOPT_RETURNTRANSFER => TRUE,
 	CURLINFO_HEADER_OUT => TRUE,
+	CURLOPT_USERAGENT => $this->ua,
 	CURLOPT_HTTPHEADER => $header);
 curl_setopt_array($curl, $options);
 return $curl;
