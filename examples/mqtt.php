@@ -35,7 +35,7 @@ $this->location=$this->config['location'];
 $this->url=$this->config['url'];
 // XXX use ini for server config
 
-if (isset($this->config['stops']))
+if (isset($this->config['stops']) && $this->config['stops']!='all')
 	$this->mstops=explode(',', $this->config['stops']);
 else
 	$this->mstops=false;
@@ -44,6 +44,7 @@ $this->mqtt=new Mosquitto\Client('talorg-siri-sm-updater', true);
 $this->mqtt->setWill('siri/'.$this->location.'/active', 0, 1, true);
 
 $this->c=new SiriClient($this->url);
+$this->c->setUserAgent("SIRI2MQTT Gateway example/0.0.1; (+http://www.tal.org/projects/php-siri-library; onion@tal.org)");
 
 $r=$this->connect();
 if (!$r)
@@ -216,6 +217,15 @@ public function run()
 echo "Stops data:";
 $this->c->loadStops();
 $this->stops=$this->c->getStops();
+if ($this->mstops===false) {
+	$this->mstops=array();
+	foreach ($this->stops as $id => $data) {
+		if ($id=='')
+			continue;
+		$this->mstops[]=$id;
+	}
+}
+printf("Monitoring %d stops\n", count($this->mstops));
 while (true) {
 	echo ".";
 	$this->refreshStopsData();
