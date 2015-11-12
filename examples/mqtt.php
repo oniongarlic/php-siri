@@ -24,6 +24,7 @@ private $mstops;
 private $srvtime;
 private $lastUpdate;
 private $drift=0;
+private $debugDump=false;
 
 function __construct(array $config)
 {
@@ -132,7 +133,8 @@ $r=$this->createStopData($s->result);
 $this->publishStop($sid, $r);
 
 // cache for debug purposes
-file_put_contents($sid.'-mqtt.json', json_encode($r, JSON_PRETTY_PRINT));
+if ($this->debugDump)
+	file_put_contents($sid.'-mqtt.json', json_encode($r, JSON_PRETTY_PRINT));
 }
 
 private function refreshStopData($sid)
