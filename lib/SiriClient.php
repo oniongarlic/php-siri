@@ -26,6 +26,11 @@ $this->url=$url;
 $this->stop=array();
 }
 
+public function setUserAgent($ua)
+{
+$this->ua=$ua;
+}
+
 private function getcurl($url)
 {
 $curl=curl_init($url);
